@@ -1,0 +1,222 @@
+
+<소켓의 본질에 대한 이해>
+소켓의 본질은 파일이다.
+소켓(Socket)은 OS커널에 구현되어 있는 프로토콜 요소에 대한 추상화된 인터페이스.            
+장치파일의 일종으로 이해할 수 있다. 일반파일에 대한 개념이 대부분 적용된다. 
+소켓은 프로세스가 드넓은 네트워크 세계로 데이터를 내보내거나 혹은 그 세계로 부터 데이터를 받기 위한 실제적인 창구 역할을 한다.
+그러므로 프로세스가 데이터를 보내거나 받기 위해서는 반드시 소켓을 열어서 소켓에 데이터를 써보내거나 소켓으로부터 데이터를 읽어 들여야 한다. 
+소켓은 프로토콜, IP주소, 포트 넘버로 정의된다.
+다시 말해 소캣은 떨어져 있는 두 호스트를 연결해주는 도구로써 인터페이스의 역할을 하는데 데이터를 주고받을 수 있는 구조체로 소켓을 통해 데이터 통로가 만들어진다. 소켓은 네트워크에서 실행중인 두 프로그램의 양방향 통신 끝점으로, 즉 통신의 끝과 끝이다.
+이러한 소켓은 역할에 따라 서버소켓, 클라이언트 소켓으로 구분된다.
+
+
+//
+ *프로토콜: 여러컴퓨터나 단말기 사이에서 데이터 통신을 원활하게 하기위해 필요한 통신규약,약속
+ 프로토콜 종류로는
+응용계층 : HTTP SMTP FTP Telnet
+표현계층: ASCII MPEG JPEG MIDI 
+세션계층: SAP, SDP, NetBIOS
+전송계층: TCP, UDP, SPX
+네트워크 계층: IP, IPX
+데이터 링크계층: Ethernet, FDDI
+물리계층: 없음
+
+*IP : 전세계 컴퓨터에 부여된 고유의 식별주소
+
+*포트: 네트워크 상에서 통신하기 위해 호스트 내부적으로 프로세스가 할당받아야 하는 고유한 숫자. 한 호스트 내에서 네트워크 통신을 하고있는 프로세스를 식별하기 위해 사용되는 값이므로, 
+같은 호스트 내에서 서로 다른 프로세스가 같은 포트넘버를 가질수 없다. 즉 같은 컴퓨터내에서 프로그램을 식별하는 번호.
+
+
+//
+
+
+
+<소켓통신의 흐름>
+
+서버(server)
+클라이언트 소켓의 연결 요청을 대기하고, 연결 요청이 오면 클라이언트 소켓을 생성하여 통신이 가능하게 한다.
+
+1) socket()함수를 이용하여 소켓을 생성 
+2)bind()함수로 ip와 port번호를 설정
+3)listen()함수로 클라이언트의 접근 요청에 수신대기열을 만들어 몇개의 클라이언트를 대기 시킬지 결정
+4)accept()함수를 사용하여 클라이언트와의 연결요청을 수락함
+
+클라이언트(Client)
+실제로 데이터 송수신이 일어나는 것은 클라이언트 소켓이다
+
+1)socket()함수로 가장 먼저 소켓을 연다.
+2)connect()함수로 통신할 서버의 설정된 ip주소와 port번호에 통신을 시도
+3)통신을 시도 시, 서버가 accept()함수를 이용하여 클라이언트의 socket descriptor를 반환
+4)이를 통해 클라이언트와 서버가 서로 read(), write()를 하며 통신(이과정을 반복)
+
+
+HTTP통신과 SOCKET 통신의 비교
+
+HTTP 통신의 특징
+client가 요청을 보내는 경우에만 server가 응답하는 단방향 통신이다. 서버로부터 응답을 받은 후에는 연결이 바로 종료된다.
+실시간 연결이 아니고 필요한 경우에만 서버로 요청을 보내는 상황에 유용하다.
+요청을 보내 서버의 응답을 기다리는 어플리케기션의 개발에 주로 사용
+
+
+SOCKET 통신의 특징
+서버와 클라이언트가 계속 연결을 유지하는 양방향통신이다. 서버와 클라이언트가 실시간으로 데이터를 주고받는 상황이 필요한 경우에 사용된다. 실시간 동영상 스트리밍이나 온라인 게임등과 같은 경우에 자주 사용
+
+
+
+<소켓프로그래밍>
+
+
+
+1.소켓 생생하기
+
+#include <sys/socket.h>  //#include <sys/types.h>
+int socket(int domain, int type, int protocol);  
+//실패 시 -1 반환 성공시 -1이외의 값 반환, 소켓 식별자 또는 소켓 디스크립터 생성
+
+*파일디스크립터: unix os에서 네트워크 소캣과 같은 파일이나 기타 입력/ 출력 리소스에 엑세스 하는데 사용되는 추상표현, 즉 시스템으로부터 할당핟은 파일이나 소켓을 대표하는 정수!
+
+
+domain: IPv4 인터넷 프로토콜을 사용(PF_INET, AF_INET),       IPv6인터넷 프로토콜을 사용(PF_INET6),  같은 시스템 내의 프로세스끼리 통신에 사용(PF_LOCAL, AF_UNIX)
+type :  TCP/IP 프로토콜을 사용(SOCK_STREAM)     UDP/IP 프로토콜을 사용(SOCK_DGRAM)
+protocol:  데이터를 전송하는데 사용되는 프로토콜 지정(0을 입력해도 소켓은 생성된다.)
+	IPPROTO_TCP: TCP를 기반으로 하는 소켓 생성
+	IPPROTO_UDP: UDP를 기반으로 하는 소켓 생성
+
+
+ex)
+int Sock;
+Sock = socket(PF_INET, SOCK_STREAM, 0);
+if (Sock == -1){
+	printf("소켓생성 실패!/n")
+	exit(1) // 오류에 의한 강제 종료
+}
+
+
+
+
+
+
+2.binding
+
+#include <sys/socket.h>   			 //#include <sys/types.h>
+int bind(int sockfd, struct sockaddr *myaddr, socklen_t addrlen):
+// 주소 할당 성공시 0반환 , 실패시 -1반환
+
+sockfd: 소켓 식별자 또는 소켓 디스크립터
+sockaddr: 주소 정보 할당 
+myaddr: 할당하고자 하는 주소정보를 지니는 구조체 변수의 주소 값
+addrlen: 두번째 인자로 전달된 구조체 변수의 길이정보
+--> 함수호출 성공하면 첫번째 인자에 해당하는 소켓에 두번째 인자로 전달된 주소 정보가 할당된다. 
+
+ex)
+#include <sys/socket.h>
+#include <string.h> //memset()사용
+
+int serv_sock;
+struct sockaddr_in serv_addr;
+char*serv_port = "1234";
+
+serv_sock = socket(PF_INET, SOCK_STREAM, 0);   //서버소켓 생성
+
+//주소정보 초기화
+memset(&serv_addr, 0, sizeof(serv_addr)); //   memory+setting   선언 후에 메모리 영역을 원하는 자료형으로 초기화 시켜서 가비지값 입력으로 발생하는 에러 제거 
+serv_addr.sin_family = AF_INET;
+serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+serv_addr.sin_port = htonl(atoi(serv_port));   //atoi() 문자열을 정수값으로 변환.
+
+//주소정보 할당
+bind(serv_sock, (struct sockaddr)&serv_addr, sizeof(serv_addr));
+
+
+
+
+3. listen 
+
+#include <sys/socket.h>
+int listen(int sockfd, int backlog);
+// 성공시 0, 실패시 -1반환  
+
+sockfd : 소켓 식별자 또는 소켓 디스크립터
+backlog: 연결 요청을 대기시킬 공간 설정, 어느 정도의 크기가 효율적인지는 정해진 바가 없다. 네트워크 상태와 서비스 종류에 따라 달라진다. 보통 5정도 둠
+
+
+ex) 
+if (-1 == listen(Sock, 5){
+	printf("listen() 에러 발생!);
+	exit(1);
+}
+
+
+
+
+4.accept
+
+#include <sys.socket.h>     //<sys.types.h>
+int accept(int sockfd, struct sockaddr *addr, soklen_t addrlen);    //클라이언트의 접속요청을 받아들이고 클라이언트와 통신하는 전용 소켓 생성
+//성공시 파일 디스크립터, 실패 시 -1 반환. 
+
+sockfd : 소켓 식별자 또는 소켓 디스크립터
+struct sockaddr *addr : 클라이언트 주소 정보를 담을 구조체
+soklen_t addrlen: 클라이언트 주소 정보를 담을 구조체 크기
+
+ex)
+int client_sock;
+struct sockaddr_in client_addr;
+int client_addr_size;
+client_addr_size = sizeof(client_addr);
+
+client_sock = accept(server_sock,(struct sockaddr*)&client_addr, &client_addr_size);
+if(-1 == client_sock){
+	printf("accept()함수 에러");
+	eixt(1);
+}
+
+
+
+htonl()함수 
+호스트에서 TCP/IP 네트워크 바이트 순서인 big -endian 으로 변환한다.(host방식의 order를 네트워크 order로 변환)
+
+INADDR_ANY 자동으로 이 컴퓨터에 존재하는 랜카드중 사용가능한 랜카드의 ip주소를 사용하라는 의미, 자동할당을 통해 직접 ip주소를 입력하지 않아도 되는 편리함
+
+
+
+
+sequence
+
+1. creating the socket(socket function call)
+2. bind the socket to a port(bind function call)
+3.listen for incoming connection requests & identify ones(listen function call)
+4.accept rhe identified connection request and open the socket(accept function call)
+
+
+리눅스 기반 컴파일
+
+터미널을 두개를 연다. 
+
+<서버측>
+gcc hello_server.c -o hello_server_exe
+./hello_server_exe 9190 //서버프로그램 실행 , 포트번호 기입
+
+
+<클라이언트 측>
+gcc hello_client.c  -o hello_client_exe
+./hello_client_exe 127.0.0.1 9190     // 127.0.0.1: local computer's address
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
