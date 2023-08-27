@@ -27,21 +27,19 @@ void *clnt_connection(void *arg) {
         }
     }
     
+pthread_mutex_lock(&mutex);
 
-    pthread_mutex_lock(&mutex);
-    for (int i = 0; i < clnt_count; i++) {
-        if (clnt_sock == clnt_socks[i]) {
-            while (i++ < clnt_count - 1)
-                clnt_socks[i] = clnt_socks[i + 1];
-            break;
-        }
+for (int i = 0; i < clnt_count; i++) {
+    if (clnt_sock == clnt_socks[i]) {
+        clnt_socks[i] = clnt_socks[clnt_count - 1]; // 마지막 클라이언트 소켓으로 덮어씌우기
+        clnt_count--; 
+        break;
     }
-    clnt_count--;
-    pthread_mutex_unlock(&mutex);
-
-    close(clnt_sock);
-    return NULL;
 }
+
+pthread_mutex_unlock(&mutex);
+close(clnt_sock);
+return NULL;
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -82,9 +80,9 @@ int main(int argc, char *argv[]) {
         pthread_mutex_unlock(&mutex);
 
         pthread_create(&t_thread, NULL, clnt_connection, &clnt_sock);
-        pthread_detach(t_thread);
-
-        // 연결 메시지를 클라이언트에게 보내는 부분을 삭제하거나 주석 처리합니다.
+        pthread_detach(t_thread);  //쓰레드 분리
+ 
+      
     }
 
     close(serv_sock);

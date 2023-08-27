@@ -14,11 +14,13 @@ void *receive_thread(void *arg) {
     
     while (1) {
         int str_len = read(sock, msg, sizeof(msg));
-        if (str_len <= 0) {
+        if (str_len == ) {
             break; // 서버가 연결을 끊으면 스레드 종료
         }
-        msg[str_len] = '\0'; // 문자열 끝을 표시하기 위해 널 문자 추가
-        printf("Received from server: %s\n", msg);
+        for (int i = 0; i < str_len; i++) {
+            putchar(msg[i]);
+        }
+        printf('\n'); 
     }
     
     close(sock);
