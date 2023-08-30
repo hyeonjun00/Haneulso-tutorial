@@ -20,26 +20,35 @@ void *clnt_connection(void *arg) {
     int str_len;
     char msg[BUFFSIZE];
 
-      while ((str_len = read(clnt_sock, msg, sizeof(msg))) != -1) {
-        printf("Received from client: ");
+    while ((str_len = read(clnt_sock, msg, sizeof(msg))) != 0) {
+        printf(">> data received, show received data: \n");
+
+        if (strcmp(msg, "exit\n") == 0) {
+            printf("Client requested exit\n");
+            write(clnt_sock, msg, strlen(msg)); // "exit" 메시지를 클라이언트에게 전송
+            break; // 클라이언트 연결 종료
+        }
+
         for (int i = 0; i < str_len; i++) {
-            printf("%c", msg[i]);
+            printf("%c\n", msg[i]);
+        }
+        printf(">> data printing\n\n");
+    }
+
+    pthread_mutex_lock(&mutex);
+    for (int i = 0; i < clnt_count; i++) {
+        if (clnt_sock == clnt_socks[i]) {
+            while (i++ < clnt_count - 1)
+                clnt_socks[i] = clnt_socks[i + 1];
+            break;
         }
     }
-    
-pthread_mutex_lock(&mutex);
+    clnt_count--;
+    pthread_mutex_unlock(&mutex);
 
-for (int i = 0; i < clnt_count; i++) {
-    if (clnt_sock == clnt_socks[i]) {
-        clnt_socks[i] = clnt_socks[clnt_count - 1]; // 마지막 클라이언트 소켓으로 덮어씌우기
-        clnt_count--; 
-        break;
-    }
+    close(clnt_sock);
+    return NULL;
 }
-
-pthread_mutex_unlock(&mutex);
-close(clnt_sock);
-return NULL;
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -80,14 +89,9 @@ int main(int argc, char *argv[]) {
         pthread_mutex_unlock(&mutex);
 
         pthread_create(&t_thread, NULL, clnt_connection, &clnt_sock);
-        pthread_detach(t_thread);  //쓰레드 분리
- 
-      
+        pthread_detach(t_thread);
     }
 
     close(serv_sock);
     return 0;
 }
-
-
-//컴파일러에게 pthread 라이브러리를 링크하도록 지시하도록 gcc -o server server3.c -lpthread

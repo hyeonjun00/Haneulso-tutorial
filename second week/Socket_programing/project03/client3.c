@@ -11,18 +11,21 @@
 void *receive_thread(void *arg) {
     int sock = *((int *)arg);
     char msg[BUFFSIZE];
-    
+
     while (1) {
         int str_len = read(sock, msg, sizeof(msg));
-        if (str_len == ) {
-            break; // 서버가 연결을 끊으면 스레드 종료
+        if (str_len <= 0) {
+            break; 
         }
-        for (int i = 0; i < str_len; i++) {
-            putchar(msg[i]);
+        msg[str_len] = '\0'; // 문자열 끝을 표시하기 위해 널 문자 추가
+        printf("Received from server: %s\n", msg);
+
+        if (strcmp(msg, "exit\n") == 0) {
+            printf("Server requested exit\n");
+            break;
         }
-        printf('\n'); 
     }
-    
+
     close(sock);
     pthread_exit(NULL);
 }
@@ -35,7 +38,7 @@ int main(int argc, char *argv[]) {
 
     int sock;
     struct sockaddr_in serv_addr;
-    
+
     sock = socket(PF_INET, SOCK_STREAM, 0);
     if (sock == -1) {
         perror("socket");
@@ -51,21 +54,23 @@ int main(int argc, char *argv[]) {
         perror("connect");
         return 1;
     }
-    
+
     pthread_t recv_thread;
     pthread_create(&recv_thread, NULL, receive_thread, &sock);
-    
+
     char msg[BUFFSIZE];
     while (1) {
         printf("Enter message: ");
         fgets(msg, BUFFSIZE, stdin);
         write(sock, msg, strlen(msg));
+
         if (strcmp(msg, "exit\n") == 0) {
+            printf("Client requested exit\n");
             break;
         }
     }
 
-    pthread_join(recv_thread, NULL); // 수신 스레드 종료 대기
+    pthread_join(recv_thread, NULL); 
     close(sock);
     return 0;
 }
