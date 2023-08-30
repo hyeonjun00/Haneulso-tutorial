@@ -17,9 +17,11 @@ void *receive_thread(void *arg) {
         if (str_len <= 0) {
             break; 
         }
-        msg[str_len] = '\0'; // 문자열 끝을 표시하기 위해 널 문자 추가
-        printf("Received from server: %s\n", msg);
-
+        printf("Received from server:");
+        for (int i = 0; i < str_len; i++) {
+            printf("%c\n", msg[i]);
+        }
+        
         if (strcmp(msg, "exit\n") == 0) {
             printf("Server requested exit\n");
             break;
